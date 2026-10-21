@@ -1,133 +1,339 @@
 ```javascript
-/* =========================================
+/* =====================================================
    SHIV KERANA GENERAL STORE
-   JavaScript
-========================================= */
+   SHOPPING CART SYSTEM
+===================================================== */
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ---------- SMOOTH NAVIGATION ---------- */
+    let cart = [];
 
-    const links = document.querySelectorAll('a[href^="#"]');
 
-    links.forEach(function (link) {
+    /* =========================================
+       ADD TO CART
+    ========================================= */
 
-        link.addEventListener("click", function (event) {
+    const addButtons = document.querySelectorAll(".add-cart");
 
-            const targetId = this.getAttribute("href");
+    addButtons.forEach(function (button) {
 
-            if (targetId === "#") return;
+        button.addEventListener("click", function () {
 
-            const target = document.querySelector(targetId);
+            const name = this.dataset.name;
+            const price = Number(this.dataset.price);
 
-            if (target) {
-                event.preventDefault();
+            const existingProduct = cart.find(
+                item => item.name === name
+            );
 
-                target.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
+
+            if (existingProduct) {
+
+                existingProduct.quantity++;
+
+            } else {
+
+                cart.push({
+                    name: name,
+                    price: price,
+                    quantity: 1
                 });
+
             }
+
+
+            updateCart();
+
+            // Scroll to cart
+            document.querySelector("#cart").scrollIntoView({
+                behavior: "smooth"
+            });
+
+
+            // Button feedback
+            const originalText = this.innerHTML;
+
+            this.innerHTML = "✓ Added";
+
+            setTimeout(() => {
+
+                this.innerHTML = originalText;
+
+            }, 1000);
 
         });
 
     });
 
 
-    /* ---------- NAVBAR SCROLL EFFECT ---------- */
+    /* =========================================
+       UPDATE CART
+    ========================================= */
 
-    const navbar = document.querySelector(".navbar");
+    function updateCart() {
 
-    window.addEventListener("scroll", function () {
+        const cartItems = document.querySelector("#cart-items");
 
-        if (window.scrollY > 50) {
+        const cartCount = document.querySelector("#cart-count");
 
-            navbar.style.boxShadow =
-                "0 8px 30px rgba(30, 60, 40, 0.08)";
+        const cartTotal = document.querySelector("#cart-total");
+
+
+        let totalItems = 0;
+
+        let totalPrice = 0;
+
+
+        cart.forEach(function (item) {
+
+            totalItems += item.quantity;
+
+            totalPrice +=
+                item.price * item.quantity;
+
+        });
+
+
+        cartCount.textContent = totalItems;
+
+        cartTotal.textContent = totalPrice;
+
+
+        /* Empty cart */
+
+        if (cart.length === 0) {
+
+            cartItems.innerHTML = `
+                <div class="empty-cart">
+
+                    🛒
+
+                    <h3>Cart abhi empty hai</h3>
+
+                    <p>
+                        Products mein se kuchh items add karein.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        /* Cart HTML */
+
+        cartItems.innerHTML = "";
+
+
+        cart.forEach(function (item, index) {
+
+            const cartItem = document.createElement("div");
+
+            cartItem.className = "cart-item";
+
+
+            cartItem.innerHTML = `
+
+                <div class="cart-item-info">
+
+                    <div class="cart-item-icon">
+                        🛒
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            ${item.name}
+                        </h3>
+
+                        <p>
+                            ₹${item.price} each
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="quantity">
+
+                    <button
+                        onclick="decreaseQuantity(${index})">
+                        −
+                    </button>
+
+                    <span>
+                        ${item.quantity}
+                    </span>
+
+                    <button
+                        onclick="increaseQuantity(${index})">
+                        +
+                    </button>
+
+                </div>
+
+
+                <div class="item-price">
+
+                    ₹${item.price * item.quantity}
+
+                </div>
+
+
+                <button
+                    class="remove-item"
+                    onclick="removeFromCart(${index})">
+
+                    🗑️
+
+                </button>
+
+            `;
+
+
+            cartItems.appendChild(cartItem);
+
+        });
+
+    }
+
+
+    /* =========================================
+       INCREASE QUANTITY
+    ========================================= */
+
+    window.increaseQuantity = function (index) {
+
+        cart[index].quantity++;
+
+        updateCart();
+
+    };
+
+
+    /* =========================================
+       DECREASE QUANTITY
+    ========================================= */
+
+    window.decreaseQuantity = function (index) {
+
+        if (cart[index].quantity > 1) {
+
+            cart[index].quantity--;
 
         } else {
 
-            navbar.style.boxShadow = "none";
+            cart.splice(index, 1);
 
         }
 
-    });
+        updateCart();
+
+    };
 
 
-    /* ---------- SCROLL REVEAL ANIMATION ---------- */
+    /* =========================================
+       REMOVE PRODUCT
+    ========================================= */
 
-    const animatedElements = document.querySelectorAll(
-        ".product-card, .why-grid div, .contact-item, .about-text, .about-box, .owner-card"
-    );
+    window.removeFromCart = function (index) {
 
-    const observer = new IntersectionObserver(
+        cart.splice(index, 1);
 
-        function (entries) {
+        updateCart();
 
-            entries.forEach(function (entry) {
+    };
 
-                if (entry.isIntersecting) {
 
-                    entry.target.classList.add("show");
+    /* =========================================
+       WHATSAPP ORDER
+    ========================================= */
 
-                    observer.unobserve(entry.target);
+    const orderButton =
+        document.querySelector("#order-button");
 
-                }
 
-            });
+    orderButton.addEventListener("click", function () {
 
-        },
+        if (cart.length === 0) {
 
-        {
-            threshold: 0.15
+            alert(
+                "Please pehle cart mein product add karein 🛒"
+            );
+
+            return;
         }
 
-    );
+
+        let message =
+            "Namaste Shiv Kerana General Store! 👋%0A%0A" +
+            "Mujhe ye products order karne hain:%0A%0A";
 
 
-    animatedElements.forEach(function (element) {
+        cart.forEach(function (item) {
 
-        element.classList.add("hidden");
-
-        observer.observe(element);
-
-    });
-
-
-    /* ---------- CURRENT YEAR ---------- */
-
-    const copyright = document.querySelector(".copyright");
-
-    if (copyright) {
-
-        const year = new Date().getFullYear();
-
-        copyright.textContent =
-            "© " + year +
-            " Shiv Kerana General Store. All Rights Reserved.";
-
-    }
-
-
-    /* ---------- PHOTO ERROR HANDLING ---------- */
-
-    const ownerPhoto = document.querySelector(".photo-circle img");
-
-    if (ownerPhoto) {
-
-        ownerPhoto.addEventListener("error", function () {
-
-            this.style.display = "none";
-
-            const photoCircle =
-                document.querySelector(".photo-circle");
-
-            photoCircle.innerHTML =
-                '<span style="font-size:70px; display:flex; align-items:center; justify-content:center; height:100%;">👨‍💼</span>';
+            message +=
+                "• " +
+                item.name +
+                " × " +
+                item.quantity +
+                " = ₹" +
+                (item.price * item.quantity) +
+                "%0A";
 
         });
 
-    }
+
+        let total = cart.reduce(
+            (sum, item) =>
+                sum + item.price * item.quantity,
+            0
+        );
+
+
+        message +=
+            "%0A💰 Total: ₹" +
+            total +
+            "%0A%0A" +
+            "Please order confirm kar dijiye. 🙏";
+
+
+        /*
+        IMPORTANT:
+        Neeche APNA WHATSAPP NUMBER dalein.
+
+        Example:
+        919918082460
+
+        India ke liye 91 lagana hai.
+        + ya spaces mat lagana.
+        */
+
+        const phoneNumber = "919918082460";
+
+
+        const whatsappURL =
+            "https://wa.me/" +
+            phoneNumber +
+            "?text=" +
+            message;
+
+
+        window.open(
+            whatsappURL,
+            "_blank"
+        );
+
+    });
+
+
+    /* =========================================
+       INITIAL CART
+    ========================================= */
+
+    updateCart();
 
 });
 ```
